@@ -1,9 +1,29 @@
-import React from 'react';
-import { Play, Square, Pause, RotateCcw, Clock } from 'lucide-react';
-import { formatTime } from '../utils/timeUtils';
+import React, { useState, useEffect } from 'react';
+import { Play, Square, Pause, RotateCcw, Clock, Timer } from 'lucide-react';
+import { formatTime, calculateLiveWorkTime, formatMsToHHmmss } from '../utils/timeUtils';
 
 const ClockPanel = ({ tracker }) => {
     const { isClockedIn, isOnBreak, clockIn, clockOut, startBreak, endBreak, activeSession } = tracker;
+    const [liveTime, setLiveTime] = useState(0);
+
+    useEffect(() => {
+        let interval;
+        if (isClockedIn) {
+            // Initial calculation
+            setLiveTime(calculateLiveWorkTime(activeSession));
+
+            // Update every second
+            interval = setInterval(() => {
+                setLiveTime(calculateLiveWorkTime(activeSession));
+            }, 1000);
+        } else {
+            setLiveTime(0);
+        }
+
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [isClockedIn, activeSession]);
 
     return (
         <div className="glass-card fade-in" style={{ padding: '2rem', marginBottom: '2rem' }}>
@@ -15,9 +35,17 @@ const ClockPanel = ({ tracker }) => {
                     </p>
                 </div>
                 {isClockedIn && (
-                    <div className="glass-card" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)' }}>
-                        <Clock size={18} color={isOnBreak ? 'var(--warning)' : 'var(--success)'} />
-                        <span style={{ fontWeight: 600 }}>{isOnBreak ? 'PAUSE' : 'ARBEITET'}</span>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                        <div className="glass-card" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)' }}>
+                            <Timer size={18} color="var(--primary)" />
+                            <span style={{ fontWeight: 700, fontSize: '1.1rem', fontFamily: 'monospace' }}>
+                                {formatMsToHHmmss(liveTime)}
+                            </span>
+                        </div>
+                        <div className="glass-card" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)' }}>
+                            <Clock size={18} color={isOnBreak ? 'var(--warning)' : 'var(--success)'} />
+                            <span style={{ fontWeight: 600 }}>{isOnBreak ? 'PAUSE' : 'ARBEITET'}</span>
+                        </div>
                     </div>
                 )}
             </div>
